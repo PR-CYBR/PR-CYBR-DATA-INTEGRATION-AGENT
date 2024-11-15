@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  pr-cybr-data-integration-agent:
+    image: pr-cybr/pr-cybr-data-integration-agent:latest
+    container_name: pr-cybr-data-integration-agent
+    env_file: .env  # Load environment variables from .env file
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - pr-cybr-net
+    ports:
+      - "8081:80"  # Adjust this port as necessary for the Data Integration Agent
+
+networks:
+  pr-cybr-net:
+    driver: bridge
