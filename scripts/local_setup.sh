@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # -------------------------------- #
@@ -430,18 +429,22 @@ log_message "Executing setup scripts for each agent repository..."
 
 for REPO_PATH in "$CLONE_DIR"/*; do
     REPO_NAME=$(basename "$REPO_PATH")
-    SETUP_SCRIPT="$REPO_PATH/local_setup.sh"
+    LOCAL_SETUP_SCRIPT="$REPO_PATH/setup.py"
+    CLOUD_SETUP_SCRIPT="$REPO_PATH/docker-compose.yml"
 
-    if [ -f "$SETUP_SCRIPT" ]; then
-        log_message "Running setup script for '$REPO_NAME'..."
-        bash "$SETUP_SCRIPT" &> "$REPO_PATH/setup_output.log"
+    if [ -f "$LOCAL_SETUP_SCRIPT" ]; then
+        log_message "Running local setup script for '$REPO_NAME'..."
+        python3 "$LOCAL_SETUP_SCRIPT" &> "$REPO_PATH/setup_output.log"
         
         if [ $? -eq 0 ]; then
-            log_message "Setup for '$REPO_NAME' completed successfully."
+            log_message "Local setup for '$REPO_NAME' completed successfully."
         else
-            log_message "Setup for '$REPO_NAME' encountered errors. Check '$REPO_PATH/setup_output.log' for details."
+            log_message "Local setup for '$REPO_NAME' encountered errors. Check '$REPO_PATH/setup_output.log' for details."
             exit 1
         fi
+    elif [ -f "$CLOUD_SETUP_SCRIPT" ]; then
+        log_message "Found cloud setup script for '$REPO_NAME'. You can deploy using Docker Compose."
+        log_message "To deploy '$REPO_NAME' in the cloud, run: docker-compose -f '$CLOUD_SETUP_SCRIPT' up -d"
     else
         log_message "No setup script found for '$REPO_NAME'. Skipping setup."
     fi
