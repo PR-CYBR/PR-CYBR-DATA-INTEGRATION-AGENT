@@ -1,0 +1,17 @@
+name: /plan - Codex Workflow
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  codex:
+    if: contains(github.event.comment.body, '/plan')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Codex Environment
+        run: echo "Setting up Codex environment"
+      - name: Execute Plan
+        run: echo "Codex stub execution"
