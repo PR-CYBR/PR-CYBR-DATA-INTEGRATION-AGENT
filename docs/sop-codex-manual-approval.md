@@ -59,10 +59,12 @@ This SOP applies to all PR-CYBR team members working with the PR-CYBR-DATA-INTEG
    - Post in relevant communication channels (Slack, Teams, etc.) if the blocker is time-sensitive
 
 4. **Manually Approve the Task**
-   - Navigate to the Codex interface
+   - Navigate to the Codex interface (accessible through your GitHub Copilot workspace or the Codex web portal)
+   - Locate the pending task using the PR number or task ID from the bot comment
    - Review the proposed changes or actions
    - Approve the task if the changes are acceptable
    - Reject and provide feedback if changes are needed
+   - Note: Contact your team lead or system administrator if you need access credentials to the Codex interface
 
 5. **Monitor Task Completion**
    - Watch for the Codex task to complete after approval
