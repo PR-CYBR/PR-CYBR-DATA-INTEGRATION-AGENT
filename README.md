@@ -26,6 +26,11 @@ The **PR-CYBR-DATA-INTEGRATION-AGENT** facilitates seamless data ingestion, tran
 - **Docker**: Optional, for containerized deployment.
 - **Access to GitHub Actions**: For automated workflows.
 
+### Branching & Secret Management Expectations
+
+- **Follow the spec-bootstrap branching model**: Create feature work from the `spec-main` lineage (for example, `spec-main`, `spec-dev`, or `spec/feature-*`). Avoid pushing directly to `main`; CI/CD automation is only wired for spec-bootstrap-compliant branches.
+- **Rely on Terraform Cloud for secrets**: Workflows draw credentials—such as Notion tokens, database IDs, and other service keys—from Terraform-managed workspace variables. Ensure the Terraform Cloud workspace is populated before running provisioning or sync scripts locally or in CI.
+
 ### Local Setup
 
 To set up the `PR-CYBR-DATA-INTEGRATION-AGENT` locally:
