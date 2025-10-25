@@ -13,3 +13,7 @@ This document provides information about the agent's functionality, setup, and u
 ## Usage
 
 (Provide usage instructions here.)
+
+## Standard Operating Procedures
+
+- [Handling Codex Manual Approval Tasks](sop-codex-manual-approval.md) - Procedure for managing Codex tasks that require manual approval and block automation pipelines
