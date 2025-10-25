@@ -1,0 +1,113 @@
+name: Notion Synchronisation Pipeline
+
+on:
+  push:
+    branches:
+      - "staging/**"
+  workflow_dispatch:
+    inputs:
+      promote:
+        description: "Promote the latest validated staging build to production"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      dry-run:
+        description: "Run the synchronisation in dry-run mode"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  staging-validation:
+    if: github.event_name == 'push'
+    name: Validate in staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/notion_sync
+
+      - name: Dry-run Notion sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$NOTION_TOKEN" ] || [ -z "$GITHUB_TOKEN" ]; then
+            echo "Tokens not available; skipping dry-run execution."
+            exit 0
+          fi
+          echo "Ensuring NOTION_TOKEN is scoped to database access only."
+          ORG_ARG=""
+          if [ -n "${{ vars.GITHUB_ORG }}" ]; then
+            ORG_ARG="--github-org ${{ vars.GITHUB_ORG }}"
+          fi
+          python -m agent_logic.notion_sync.cli --database-id ${{ secrets.NOTION_DATABASE_ID }} $ORG_ARG --dry-run
+
+  production-sync:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.promote == 'true'
+    name: Promote to production
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Notion sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$NOTION_TOKEN" ] || [ -z "$GITHUB_TOKEN" ]; then
+            echo "Required tokens are missing; unable to run production sync."
+            exit 1
+          fi
+          echo "Running production sync with minimal permissions."
+          if [ "${{ github.event.inputs.dry-run }}" = "true" ]; then
+            EXTRA_ARGS="--dry-run"
+          else
+            EXTRA_ARGS=""
+          fi
+          ORG_ARG=""
+          if [ -n "${{ vars.GITHUB_ORG }}" ]; then
+            ORG_ARG="--github-org ${{ vars.GITHUB_ORG }}"
+          fi
+          python -m agent_logic.notion_sync.cli --database-id ${{ secrets.NOTION_DATABASE_ID }} $ORG_ARG --repo-id-property "Repository ID" $EXTRA_ARGS
