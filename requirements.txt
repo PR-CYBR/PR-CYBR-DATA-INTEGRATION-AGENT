@@ -1,1 +1,2 @@
 # Add your Python dependencies here
+requests>=2.31.0
