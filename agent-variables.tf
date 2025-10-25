@@ -78,3 +78,15 @@ variable "AGENT_COLLAB" {
   sensitive   = true
   description = "Token for governance, discussions, issues, project boards"
 }
+
+# --- Notion Integration ---
+variable "NOTION_TOKEN" {
+  type        = string
+  sensitive   = true
+  description = "Integration token used for Notion sync operations"
+}
+
+variable "NOTION_DATABASE_IDS" {
+  type        = map(string)
+  description = "Mapping of Notion database names to their corresponding IDs"
+}
