@@ -111,6 +111,10 @@ The `PR-CYBR-DATA-INTEGRATION-AGENT` integrates with other PR-CYBR agents to pro
 
   - The agent provides monitoring features to keep track of data ingestion, transformation, and synchronization processes.
 
+## Standard Operating Procedures
+
+- **[Handling Codex Manual Approval Tasks](docs/sop-codex-manual-approval.md)** - Procedure for managing Codex tasks that require manual approval and block automation pipelines
+
 ## License
 
 This project is licensed under the **MIT License**. See the [`LICENSE`](LICENSE) file for details.
