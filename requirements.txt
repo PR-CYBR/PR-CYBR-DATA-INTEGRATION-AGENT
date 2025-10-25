@@ -1,1 +1,5 @@
-# Add your Python dependencies here
+# Runtime dependencies
+requests>=2.31.0
+
+# Test dependencies
+pytest>=7.4.0
