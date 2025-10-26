@@ -78,3 +78,56 @@ variable "AGENT_COLLAB" {
   sensitive   = true
   description = "Token for governance, discussions, issues, project boards"
 }
+
+# --- GitHub / Terraform Cloud Integration ---
+variable "GITHUB_TOKEN" {
+  type        = string
+  sensitive   = true
+  description = "GitHub personal access token used by automation workflows"
+}
+
+variable "TFC_TOKEN" {
+  type        = string
+  sensitive   = true
+  description = "Terraform Cloud API token for CLI authentication"
+}
+
+variable "GITHUB_ORG" {
+  type        = string
+  description = "GitHub organization slug for reporting and sync operations"
+}
+
+# --- Notion Integrations ---
+variable "NOTION_TOKEN" {
+  type        = string
+  sensitive   = true
+  description = "Notion integration token for database sync"
+}
+
+variable "NOTION_DATABASE_ID" {
+  type        = string
+  description = "Target Notion database identifier"
+}
+
+# --- Docker Publishing Credentials ---
+variable "PR_CYBR_DOCKER_USER" {
+  type        = string
+  description = "Service account username for PR-CYBR Docker Hub automation"
+}
+
+variable "PR_CYBR_DOCKER_PASS" {
+  type        = string
+  sensitive   = true
+  description = "Service account password for PR-CYBR Docker Hub automation"
+}
+
+variable "DOCKER_USERNAME" {
+  type        = string
+  description = "Generic Docker username for integration tests"
+}
+
+variable "DOCKER_PASSWORD" {
+  type        = string
+  sensitive   = true
+  description = "Generic Docker password for integration tests"
+}
