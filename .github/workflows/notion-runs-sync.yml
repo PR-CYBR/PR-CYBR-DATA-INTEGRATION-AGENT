@@ -1,0 +1,66 @@
+name: Notion Runs Board Sync
+
+on:
+  workflow_run:
+    workflows:
+      - Notion Task Sync
+      - Notion Pull Request Sync
+      - Notion Issue Sync
+      - Notion Project Sync
+      - Notion Synchronisation Pipeline
+      - maintenance
+      - tfc-sync
+      - Build and Publish image to Docker Hub
+      - Verify Environment Variables
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: notion-runs-sync-${{ github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    if: ${{ github.event.workflow_run.conclusion != '' }}
+    name: Log workflow execution to Notion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Record workflow run in Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTION_RUNS_DB_ID: ${{ secrets.A_RUNS_BOARD_ID }}
+          NOTION_SYNC_DRY_RUN: ${{ vars.NOTION_SYNC_DRY_RUN }}
+        run: |
+          if [ -z "${NOTION_TOKEN}" ] || [ -z "${GITHUB_TOKEN}" ] || [ -z "${NOTION_RUNS_DB_ID}" ]; then
+            echo "Notion runs board sync skipped because required secrets are not configured."
+            exit 0
+          fi
+          DRY_RUN_FLAG=""
+          if [ "${NOTION_SYNC_DRY_RUN}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          python -m agent_logic.notion_sync.sync_entities runs \
+            --database-id "${NOTION_RUNS_DB_ID}" \
+            --unique-property "GitHub ID" \
+            ${DRY_RUN_FLAG}
