@@ -4,3 +4,4 @@ requests>=2.31.0
 
 # Test dependencies
 pytest>=7.4.0
+responses>=0.25.0
