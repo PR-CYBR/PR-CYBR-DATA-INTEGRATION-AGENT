@@ -1,0 +1,63 @@
+name: Notion Runs Board Sync
+
+on:
+  workflow_run:
+    workflows:
+      - Notion Task Sync
+      - Notion PR Sync
+      - Notion Issues Sync
+      - Notion Project Sync
+      - Notion Synchronisation Pipeline
+      - verify-env-vars
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  log-run:
+    if: ${{ github.event.workflow_run.conclusion != '' }}
+    name: Log workflow run to Notion
+    runs-on: ubuntu-latest
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      RUNS_BOARD_ID: ${{ secrets[vars.RUNS_BOARD_SECRET_NAME] }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Log workflow run into Notion runs board
+        env:
+          RUNS_BOARD_ID: ${{ env.RUNS_BOARD_ID }}
+        run: |
+          if [ -z "${RUNS_BOARD_ID}" ]; then
+            echo "Runs board database secret is not configured; skipping sync."
+            exit 0
+          fi
+          PAYLOAD=$(jq -n \
+            --arg run_id "${{ github.event.workflow_run.id }}" \
+            --arg workflow "${{ github.event.workflow_run.name }}" \
+            --arg status "${{ github.event.workflow_run.conclusion }}" \
+            --arg url "${{ github.event.workflow_run.html_url }}" \
+            --arg job "${{ github.event.workflow_run.display_title }}" \
+            --arg timestamp "${{ github.event.workflow_run.updated_at }}" \
+            '{"run_id":$run_id,"workflow":$workflow,"status":$status,"url":$url,"job":$job,"timestamp":$timestamp}'
+          )
+          python -m agent_logic.notion_sync.workflow_sync \
+            --entity runs_board \
+            --database-id "${RUNS_BOARD_ID}" \
+            --payload "${PAYLOAD}"
