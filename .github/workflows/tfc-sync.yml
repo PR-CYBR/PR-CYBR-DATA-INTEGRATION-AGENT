@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.AGENT_ACTIONS }}   # PAT stored in TFC
+          token: ${{ secrets.GITHUB_TOKEN }}   # PAT stored in TFC
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
