@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, MutableMapping, Optional
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional
 
 import requests
 
@@ -66,6 +66,44 @@ class NotionApi:
             raise NotionApiError(f"Failed to query Notion database: {response.text}")
         return response.json()
 
+    def list_database_pages(
+        self,
+        database_id: str,
+        *,
+        filter_body: Optional[Mapping[str, object]] = None,
+    ) -> Iterable[Mapping[str, object]]:
+        """Iterate over all pages stored in a Notion database.
+
+        Parameters
+        ----------
+        database_id:
+            Identifier of the Notion database being queried.
+        filter_body:
+            Optional filter applied to the query payload.
+        """
+
+        payload: Dict[str, object] = {}
+        if filter_body:
+            payload["filter"] = filter_body
+
+        while True:
+            response = self._session.post(
+                f"{self._base_url}/databases/{database_id}/query",
+                json=payload,
+                timeout=30,
+            )
+            if response.status_code >= 400:
+                raise NotionApiError(f"Failed to list Notion database pages: {response.text}")
+
+            data = response.json()
+            for page in data.get("results", []):
+                yield page
+
+            if not data.get("has_more"):
+                break
+
+            payload["start_cursor"] = data.get("next_cursor")
+
     def create_page(self, payload: Mapping[str, object]) -> Mapping[str, object]:
         response = self._session.post(
             f"{self._base_url}/pages",
@@ -117,6 +155,61 @@ class GitHubClient:
             params = None
 
         return repositories
+
+    # ------------------------------------------------------------------
+    def _request(self, method: str, url: str, *, params: Optional[Mapping[str, object]] = None) -> requests.Response:
+        response = self._session.request(method, url, params=params, timeout=30)
+        if response.status_code >= 400:
+            raise GitHubApiError(f"GitHub API request failed ({response.status_code}): {response.text}")
+        return response
+
+    def list_repository_issues(
+        self,
+        repository: str,
+        *,
+        state: str = "all",
+        labels: Optional[str] = None,
+    ) -> Iterable[Mapping[str, object]]:
+        url = f"{self._base_url}/repos/{repository}/issues"
+        params: Dict[str, object] = {"state": state, "per_page": 100}
+        if labels:
+            params["labels"] = labels
+
+        while url:
+            response = self._request("GET", url, params=params)
+            yield from response.json()
+            url = response.links.get("next", {}).get("url")
+            params = None
+
+    def list_pull_requests(
+        self,
+        repository: str,
+        *,
+        state: str = "all",
+    ) -> Iterable[Mapping[str, object]]:
+        url = f"{self._base_url}/repos/{repository}/pulls"
+        params: Dict[str, object] = {"state": state, "per_page": 100}
+
+        while url:
+            response = self._request("GET", url, params=params)
+            yield from response.json()
+            url = response.links.get("next", {}).get("url")
+            params = None
+
+    def list_milestones(
+        self,
+        repository: str,
+        *,
+        state: str = "all",
+    ) -> Iterable[Mapping[str, object]]:
+        url = f"{self._base_url}/repos/{repository}/milestones"
+        params: Dict[str, object] = {"state": state, "per_page": 100}
+
+        while url:
+            response = self._request("GET", url, params=params)
+            yield from response.json()
+            url = response.links.get("next", {}).get("url")
+            params = None
 
 
 class NotionSyncClient:
