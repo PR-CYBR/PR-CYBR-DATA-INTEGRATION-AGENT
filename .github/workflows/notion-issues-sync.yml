@@ -1,0 +1,55 @@
+name: Notion Issues Sync
+
+on:
+  push:
+    branches:
+      - "staging/**"
+  pull_request:
+    branches:
+      - "staging/**"
+  issues:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ISSUES_DB_ID: ${{ secrets.NOTION_ISSUES_BACKLOG_DB_ID }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "${ISSUES_DB_ID}" ]; then
+            echo "Issues database id is not configured; skipping run." >> $GITHUB_STEP_SUMMARY
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Checkout repository
+        if: steps.config.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        if: steps.config.outputs.skip == 'false'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        if: steps.config.outputs.skip == 'false'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Sync issues data to Notion
+        if: steps.config.outputs.skip == 'false'
+        run: |
+          python -m agent_logic.notion_sync.entity_sync_cli \
+            --entity issues \
+            --database-id "${ISSUES_DB_ID}" \
+            --verbose
