@@ -1,0 +1,97 @@
+name: Notion Runs Board Sync
+
+on:
+  workflow_run:
+    workflows:
+      - Notion Task Sync
+      - Notion Pull Request Sync
+      - Notion Issues Sync
+      - Notion Project Sync
+      - Notion Synchronisation Pipeline
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      RUNS_DB_ID: ${{ secrets.NOTION_DISCUSSIONS_ARC_DB_ID }}
+    steps:
+      - name: Check configuration
+        id: config
+        run: |
+          if [ -z "${RUNS_DB_ID}" ]; then
+            echo "Runs board database id is not configured; skipping run." >> $GITHUB_STEP_SUMMARY
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Prepare payload
+        if: steps.config.outputs.skip == 'false'
+        run: |
+          python - <<'PY'
+import json
+import os
+
+with open(os.environ['GITHUB_EVENT_PATH'], 'r', encoding='utf-8') as handle:
+    event = json.load(handle)
+
+workflow_run = event.get('workflow_run', {})
+repository = workflow_run.get('repository') or event.get('repository') or {}
+actor = workflow_run.get('actor') or {}
+head_commit = workflow_run.get('head_commit') or {}
+notes = []
+if head_commit:
+    message = head_commit.get('message')
+    if message:
+        notes.append(f"Head commit: {message}")
+    sha = head_commit.get('id')
+    if sha:
+        notes.append(f"Commit: {sha}")
+if workflow_run.get('head_branch'):
+    notes.append(f"Branch: {workflow_run['head_branch']}")
+if workflow_run.get('head_sha'):
+    notes.append(f"Head SHA: {workflow_run['head_sha']}")
+
+payload = {
+    'workflow': workflow_run.get('name') or event.get('workflow', {}).get('name'),
+    'workflow_run_id': str(workflow_run.get('id') or ''),
+    'status': workflow_run.get('status') or 'completed',
+    'conclusion': workflow_run.get('conclusion') or 'unknown',
+    'event': workflow_run.get('event') or event.get('action', ''),
+    'timestamp': workflow_run.get('updated_at') or workflow_run.get('created_at') or '',
+    'repository': repository.get('full_name') or '',
+    'html_url': workflow_run.get('html_url'),
+    'actor': actor.get('login') if isinstance(actor, dict) else '',
+    'notes': '\n'.join(notes),
+}
+with open('run-payload.json', 'w', encoding='utf-8') as payload_file:
+    json.dump(payload, payload_file)
+PY
+      - name: Checkout repository
+        if: steps.config.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        if: steps.config.outputs.skip == 'false'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        if: steps.config.outputs.skip == 'false'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Sync run log entry to Notion
+        if: steps.config.outputs.skip == 'false'
+        run: |
+          python -m agent_logic.notion_sync.entity_sync_cli \
+            --entity runs \
+            --database-id "${RUNS_DB_ID}" \
+            --run-payload run-payload.json \
+            --verbose
