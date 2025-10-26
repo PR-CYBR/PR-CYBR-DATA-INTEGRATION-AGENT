@@ -1,0 +1,56 @@
+name: Notion Task Sync
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+  issues:
+    types:
+      - opened
+      - edited
+      - closed
+      - reopened
+      - labeled
+      - unlabeled
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  sync:
+    name: Sync project tasks to Notion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run task synchronisation
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.AGENT_COLLAB || secrets.GITHUB_TOKEN }}
+          TASK_DATABASE_ID: ${{ secrets.NOTION_TASK_DB_ID || vars.NOTION_TASK_DB_ID }}
+        run: |
+          if [ -z "$TASK_DATABASE_ID" ]; then
+            echo "Task Notion database ID is not configured." >&2
+            exit 1
+          fi
+          python -m agent_logic.notion_sync.entity_sync tasks --database-id "$TASK_DATABASE_ID" --verbose
