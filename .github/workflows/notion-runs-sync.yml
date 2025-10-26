@@ -1,0 +1,54 @@
+name: Notion Runs Board Sync
+
+on:
+  workflow_run:
+    workflows:
+      - Notion Task Sync
+      - Notion Pull Request Sync
+      - Notion Issues Sync
+      - Notion Project Sync
+      - Notion Synchronisation Pipeline
+      - Verify Environment Variables
+      - Build and Publish image to Docker Hub
+      - maintenance
+      - tfc-sync
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Update Notion runs board
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Sync workflow run to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_RUNS_DB_ID: ${{ secrets[format('%s_RUNS_BOARD_ID', coalesce(vars.AGENT_SECRET_PREFIX, 'A_00'))] }}
+        run: |
+          if [ -z "${NOTION_TOKEN}" ] || [ -z "${NOTION_RUNS_DB_ID}" ]; then
+            echo "Required credentials not configured; skipping runs board sync."
+            exit 0
+          fi
+          python -m agent_logic.notion_sync.entity_sync \
+            --entity runs \
+            --database-id "${NOTION_RUNS_DB_ID}" \
+            --event-path "${GITHUB_EVENT_PATH}"
