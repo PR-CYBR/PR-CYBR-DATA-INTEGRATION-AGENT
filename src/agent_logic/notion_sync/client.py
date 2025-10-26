@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, MutableMapping, Optional
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional
 
 import requests
 
@@ -64,6 +64,15 @@ class NotionApi:
         )
         if response.status_code >= 400:
             raise NotionApiError(f"Failed to query Notion database: {response.text}")
+        return response.json()
+
+    def retrieve_database(self, database_id: str) -> Mapping[str, object]:
+        response = self._session.get(
+            f"{self._base_url}/databases/{database_id}",
+            timeout=30,
+        )
+        if response.status_code >= 400:
+            raise NotionApiError(f"Failed to retrieve Notion database: {response.text}")
         return response.json()
 
     def create_page(self, payload: Mapping[str, object]) -> Mapping[str, object]:
