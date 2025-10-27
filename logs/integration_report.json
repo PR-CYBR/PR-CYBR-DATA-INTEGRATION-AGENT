@@ -1,0 +1,69 @@
+{
+  "generated_at": "2025-10-27T16:26:30.930716+00:00",
+  "entities_synced": 5,
+  "error_count": 0,
+  "average_latency_ms": 112.38,
+  "details": [
+    {
+      "direction": "GitHub\u2192Notion",
+      "entity_type": "issue",
+      "identifier": "12345",
+      "message": "Synced issue #42",
+      "latency_ms": 120.5
+    },
+    {
+      "direction": "GitHub\u2192Notion",
+      "entity_type": "pull_request",
+      "identifier": "67890",
+      "message": "Synced PR #18",
+      "latency_ms": 210.8
+    },
+    {
+      "direction": "GitHub\u2192Notion",
+      "entity_type": "discussion",
+      "identifier": "112233",
+      "message": "Archived discussion",
+      "latency_ms": 90.0
+    },
+    {
+      "direction": "Notion\u2192GitHub",
+      "entity_type": "issue",
+      "identifier": "gh-issue-abc123",
+      "message": "Created GitHub issue from Notion task",
+      "latency_ms": 75.2
+    },
+    {
+      "direction": "Notion\u2192GitHub",
+      "entity_type": "issue",
+      "identifier": "12345",
+      "message": "Mirrored status change",
+      "latency_ms": 65.4
+    }
+  ],
+  "links": [
+    {
+      "github_id": "12345",
+      "notion_page_id": "notion-12345",
+      "entity_type": "issue",
+      "status": "In Review"
+    },
+    {
+      "github_id": "67890",
+      "notion_page_id": "notion-67890",
+      "entity_type": "pull_request",
+      "status": "Done"
+    },
+    {
+      "github_id": "112233",
+      "notion_page_id": "notion-112233",
+      "entity_type": "discussion",
+      "status": "Archived"
+    },
+    {
+      "github_id": "gh-issue-abc123",
+      "notion_page_id": "abc123",
+      "entity_type": "issue",
+      "status": "Backlog"
+    }
+  ]
+}
