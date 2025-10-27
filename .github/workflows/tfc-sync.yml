@@ -16,6 +16,11 @@ permissions:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+      TF_VAR_NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
 
     steps:
       - name: Checkout repo
@@ -30,13 +35,16 @@ jobs:
 
       # Initialize Terraform
       - name: Terraform Init
+        working-directory: ./infra
         run: terraform init
 
       # Run plan for validation (always runs)
       - name: Terraform Plan
+        working-directory: ./infra
         run: terraform plan -input=false -no-color
 
       # Only apply if PR merged into main
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ./infra
         run: terraform apply -auto-approve -input=false

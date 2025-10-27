@@ -1,0 +1,48 @@
+name: data-integration
+
+on:
+  push:
+    branches:
+      - "staging/**"
+      - "integration/**"
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute data bridge synchronisation
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+        run: |
+          python scripts/data_bridge.py --demo
+
+      - name: Upload integration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-report
+          path: logs/integration_report.json
