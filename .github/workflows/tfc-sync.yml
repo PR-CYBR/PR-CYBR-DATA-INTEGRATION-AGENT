@@ -9,6 +9,10 @@ on:
     branches:
       - main      # All PRs targeting main branch (HITL control)
 
+defaults:
+  run:
+    working-directory: infra
+
 permissions:
   contents: read
   id-token: write   # Prepares for Terraform Cloud OIDC auth
