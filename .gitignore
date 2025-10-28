@@ -36,3 +36,7 @@ var/
 
 # Secret files
 config/secrets.yml
+
+infra/.terraform/
+infra/terraform.tfstate*
+infra/*.tfvars

@@ -16,27 +16,25 @@ permissions:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_AGENT_ID: ${{ vars.AGENT_ID }}
+      TF_VAR_NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID || vars.NOTION_PAGE_ID }}
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}   # PAT stored in TFC
+      - uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          cli_config_credentials_token: ${{ secrets.TFC_TOKEN }}
-
-      # Initialize Terraform
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend=false
+        working-directory: infra
 
-      # Run plan for validation (always runs)
+      - name: Terraform Fmt
+        run: terraform fmt -check
+        working-directory: infra
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infra
+
       - name: Terraform Plan
         run: terraform plan -input=false -no-color
-
-      # Only apply if PR merged into main
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
+        working-directory: infra
